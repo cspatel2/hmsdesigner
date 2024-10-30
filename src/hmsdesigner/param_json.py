@@ -16,7 +16,6 @@ class HmsSysParam:
     FlCollimator: float
     FlPrimeCamera: float
     SlitLengthmm: float
-    SlitLengthdeg: float
     sigma: float
     relSlitPositionmm: float
     SlitA2FarEdgemm: float
@@ -86,7 +85,6 @@ if __name__ == '__main__':
         'FlCollimator': 400,
         'FlPrimeCamera': 443.401,
         'SlitLengthmm': 55.29,
-        'SlitLengthdeg': np.rad2deg(np.arctan(55.29/400)),
         'sigma': 10125.5569,
         'relSlitPositionmm': 25,
         'SlitA2FarEdgemm': 58.35,
@@ -167,7 +165,6 @@ if __name__ == '__main__':
         'FlCollimator': 400,
         'FlPrimeCamera': 443.401,
         'SlitLengthmm': 55.29,
-        'SlitLengthdeg': np.rad2deg(np.arctan(55.29/400)),
         'sigma': 10125.5569,
         'relSlitPositionmm': 21.43,
         'SlitA2FarEdgemm': 63.35,
@@ -311,7 +308,6 @@ if __name__ == '__main__':
         'FlCollimator': 400,
         'FlPrimeCamera': 429.420,
         'SlitLengthmm': 55.29,
-        'SlitLengthdeg': np.rad2deg(np.arctan(55.29/400)),
         'sigma': 10125.5569,
         'relSlitPositionmm': 21.43,
         'SlitA2FarEdgemm': 63.35,
@@ -331,7 +327,6 @@ if __name__ == '__main__':
         'FlPrimeCamera': 365.891,
         'SlitLengthmm': 55.30,  # slight length, mm.
         # slit length = slitlen/focallength,Deg.
-        'SlitLengthdeg': np.rad2deg(np.arctan(55.30/400)),
         'sigma': 10245.208387*100/80.5,  # measured grating density
         'relSlitPositionmm': 20.04,  # Distance between the two slits, mm.
         # distance between slit closest to mosaic and the farest edge of the mosaic, mm.
@@ -418,7 +413,6 @@ if __name__ == '__main__':
         'FlPrimeCamera': 365.891,
         'SlitLengthmm': 55.30,  # slight length, mm.
         # slit length = slitlen/focallength,Deg.
-        'SlitLengthdeg': np.rad2deg(np.arctan(55.30/400)),
         'sigma': 10245.208387,  # measured grating density
         #     'sigma': 10131.7122594, #new grating
         'relSlitPositionmm': 20.04,  # Distance between the two slits, mm.

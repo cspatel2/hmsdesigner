@@ -1,0 +1,103 @@
+system = "HiT&MIS A"
+# 
+# | B | <--- relSlitPositionmm ---> | A | ---> SlitA2CloseEdgemm | Mosaic | SlitA2FarEdgemm
+#
+[SysParam]
+hmsVersion = "HiT&MIS A"
+FlCollimator = 400 # focal length of collimator in mm
+FlPrimeCamera = 443.401 # focal length of the mosaic arm in mm
+SlitLengthmm = 55.29 # vertical slit length in mm
+sigma = 10125.5569 # groove spacing in nm (1e6 / groove density in mm)
+relSlitPositionmm = 21.43 # slit spacing
+SlitA2FarEdgemm = 63.35 # distance from slit A to far edge of the mosaic in mm
+SlitA2CloseEdgemm = 13.83 # distance from slit A to close edge of the mosaic in mm
+MosaicWidthmm = 52.5 # Mosaic width in mm
+MosaicHeightmm = 55.19 # Mosaic height in mm
+MosaicWindowWidthmm = 49.52 # Mosaic window width in mm (smaller than MosaicWidthmm)
+MosaicWindowHeightmm = 50.05 # Mosaic window height in mm (smaller than MosaicHeightmm)
+MosaicFilters = [ # filter names
+    [ # top row (mosaic window)
+        "4278",
+        "6300",
+        "5577",
+        "7774",
+    ],
+    [ # bottom row (mosaic window)
+        "6563",
+        "4861",
+    ],
+]
+
+[WlParam.5577] # wavelength parameters: WlParam.NAME
+wl = 557.7                         # wavelength in nm
+color = "green"                    # color for plotting
+SlitNum = 2                        # number of slits
+DiffractionOrder = 33              # expected diffraction order
+PanelLetter = "b"                  # panel letter
+PanelWindowWidthmm = 10.1          # filter panel window width in mm
+PanelWidthmm = 10.1                # filter panel width in mm
+PanelWindowHeightmm = 25.02        # filter panel window height in mm
+PanelHeightmm = 27.919999999999998 # filter panel height in mm
+
+[WlParam.6300]
+wl = 630.0
+color = "Red"
+SlitNum = 2
+DiffractionOrder = 29
+PanelLetter = "c"
+PanelWindowWidthmm = 9.7
+PanelWidthmm = 9.7
+PanelWindowHeightmm = 25.02
+PanelHeightmm = 27.919999999999998
+
+[WlParam.7774]
+wl = 777.4
+color = "plum"
+SlitNum = 1
+DiffractionOrder = 24
+PanelLetter = "a"
+PanelWindowWidthmm = 12.22
+PanelWidthmm = 12.22
+PanelWindowHeightmm = 25.02
+PanelHeightmm = 27.919999999999998
+
+[WlParam.4278]
+wl = 427.8
+color = "blue"
+SlitNum = 1
+DiffractionOrder = 43
+PanelLetter = "d"
+PanelWindowWidthmm = 17.5
+PanelWidthmm = 20.18
+PanelWindowHeightmm = 25.02
+PanelHeightmm = 27.919999999999998
+
+[WlParam.6563]
+wl = 656.3
+color = "Darkred"
+SlitNum = 3
+DiffractionOrder = 28
+PanelLetter = "f"
+PanelWindowWidthmm = 18.83
+PanelWidthmm = 21.509999999999998
+PanelWindowHeightmm = 25.02
+PanelHeightmm = 26.96
+
+[WlParam.4861]
+wl = 486.1
+color = "cyan"
+SlitNum = 4
+DiffractionOrder = 38
+PanelLetter = "e"
+PanelWindowWidthmm = 30.69
+PanelWidthmm = 30.69
+PanelWindowHeightmm = 25.02
+PanelHeightmm = 26.96
+
+[InstParam]
+alpha = 67.81      # alpha angle in degrees
+max_ord = 50       # maximum order calculated
+mgamma_deg = 89.95 # gamma angle in degrees
+imgsz = 1024       # image size
+imgrot = 0.1       # image rotation
+slitwidth = 0.250  # slit width in mm

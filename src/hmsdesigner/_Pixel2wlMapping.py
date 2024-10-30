@@ -11,7 +11,6 @@ import sys
 
 import skimage
 
-
 def in_notebook():
     """
     Returns ``True`` if the module is running in IPython kernel,
@@ -22,13 +21,15 @@ def in_notebook():
 
 
 if not in_notebook():
-    from ..Diffraction._ImgPredictor import HMS_ImagePredictor
-    from ..Utils._files import *
-    from ..Utils._Utility import *
+    from ._utils import find_nearest, open_fits
+    from ._ImgPredictor import HMS_ImagePredictor
+    # from ..Utils._files import *
+    # from ..Utils._Utility import *
 else:
-    from hmspython.Diffraction._ImgPredictor import HMS_ImagePredictor
-    from hmspython.Utils._files import *
-    from hmspython.Utils._Utility import *
+    from hmsdesigner._ImgPredictor import HMS_ImagePredictor
+    from hmsdesigner._utils import find_nearest, open_fits
+    # from hmsdesigner.Utils._files import *
+    # from hmsdesigner.Utils._Utility import *
 # %%
 
 

@@ -3,9 +3,9 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hmspython"
-version = "0.0.2"
-description = "Python codes relevant to HiT&MIS Data Analysis"
+name = "hmsdesigner"
+version = "0.0.1"
+description = "Designing HiT&MIS and similar imaging spectrographs"
 requires-python = ">=3.8"
 authors = [{ name = "Charmi Patel", email = "charmi_patel@student.uml.edu" }]
 dependencies = ['numpy>=1.20.0', 'tqdm>=4.60.0', 'astropy>=4.3.0', 'xarray', 'netcdf4', 'dataclasses_json', 'tosholi']

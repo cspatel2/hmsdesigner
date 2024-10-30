@@ -1,10 +1,3 @@
-# _files
-
-This repository contains general utility functions for various tasks.
-
-## Installation
-
-You can install this package via pip:
-
-```sh
-pip install git+https://github.com/cspatel2/cppython.git
+# HiT&MIS Designer
+This package does physical optics calculations for a double-slit imaging spectrograph.
+Allows line straightening for curved images with known instrument configurations.
