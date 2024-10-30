@@ -121,6 +121,27 @@ class HMS_ImagePredictor:
         self.ls = '--o'  # line style
         self.lc = 'black'  # line color
 
+    def get_beta(self, wl: Numeric, m: int, *, gamma: Numeric = 90) -> Numeric:
+        """## Calculate the diffracted angle β using the grating equation: \n sinβ = mλ/(d*sinγ) - sinα
+
+        ### Args:
+            - `wl (Numeric)`: Wavelength in nm.
+            - `m (int)`: Diffraction order.
+            - `gamma (Numeric, optional)`: Incident angle parallel to the grating. Defaults to 90.
+
+        ### Raises:
+            - `ValueError`: α is not set.
+
+        ### Returns:
+            - `Numeric`: Diffracted angle β.
+        """
+        if self.alpha is None:
+            raise ValueError("Alpha is not set. Please set the alpha value.")
+        const = m*wl/(self.sigma*np.sin(np.deg2rad(gamma)))  # unitless
+        sinb = const - np.sin(np.deg2rad(self.alpha))  # unitless
+        beta = np.arcsin(sinb)  # rad
+        return np.rad2deg(beta)
+
     def resolving_power(self, wl: Numeric, m: int, *, gamma: Numeric = 90) -> Numeric:
         """## Calculate the resolving power of the HMS using the formula: \n R = mλ/(σ*sin γ*cos β*B) \n where B is the slit width in radians.
 
