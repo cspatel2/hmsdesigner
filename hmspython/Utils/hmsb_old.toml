@@ -1,0 +1,94 @@
+system = "B"
+
+[SysParam]
+hmsVersion = "B"
+FlCollimator = 400
+FlPrimeCamera = 365.891
+SlitLengthmm = 55.3
+SlitLengthdeg = 7.871246707831734
+sigma = 12726.966940372671
+relSlitPositionmm = 20.04
+SlitA2FarEdgemm = 71.35
+SlitA2CloseEdgemm = 15.83
+MosaicWidthmm = 52.52
+MosaicHeightmm = 55.1
+MosaicWindowWidthmm = 49.96
+MosaicWindowHeightmm = 50.15
+MosaicFilters = [
+    [
+        "4278",
+        "7774",
+        "6300",
+        "5577",
+    ],
+    [
+        "4861",
+        "6563",
+    ],
+]
+
+[WlParam.5577]
+wl = 557.7
+color = "green"
+SlitNum = 2
+DiffractionOrder = 33
+PanelLetter = "a"
+PanelWindowWidthmm = 19.62
+PanelWidthmm = 19.62
+PanelWindowHeightmm = 26.69
+PanelHeightmm = 26.69
+
+[WlParam.6300]
+wl = 630.0
+color = "Red"
+SlitNum = 2
+DiffractionOrder = 29
+PanelLetter = "b"
+PanelWindowWidthmm = 8.53
+PanelWidthmm = 8.53
+PanelWindowHeightmm = 26.69
+PanelHeightmm = 26.69
+
+[WlParam.7774]
+wl = 777.4
+color = "plum"
+SlitNum = 2
+DiffractionOrder = 24
+PanelLetter = "c"
+PanelWindowWidthmm = 10.31
+PanelWidthmm = 10.31
+PanelWindowHeightmm = 26.69
+PanelHeightmm = 26.69
+
+[WlParam.4278]
+wl = 427.8
+color = "blue"
+SlitNum = 1
+DiffractionOrder = 43
+PanelLetter = "d"
+PanelWindowWidthmm = 12.89
+PanelWidthmm = 12.89
+PanelWindowHeightmm = 26.69
+PanelHeightmm = 26.69
+
+[WlParam.6563]
+wl = 656.3
+color = "Darkred"
+SlitNum = 3
+DiffractionOrder = 28
+PanelLetter = "e"
+PanelWindowWidthmm = 30.85
+PanelWidthmm = 30.85
+PanelWindowHeightmm = 26.69
+PanelHeightmm = 26.69
+
+[WlParam.4861]
+wl = 486.1
+color = "cyan"
+SlitNum = 4
+DiffractionOrder = 38
+PanelLetter = "f"
+PanelWindowWidthmm = 20.61
+PanelWidthmm = 20.61
+PanelWindowHeightmm = 26.69
+PanelHeightmm = 26.69
