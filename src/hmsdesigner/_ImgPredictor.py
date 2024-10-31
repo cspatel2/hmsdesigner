@@ -105,7 +105,6 @@ class HMS_ImagePredictor:
         self.alpha_slitB = self.alphas[1]  # deg
         slitlengthdeg = np.arctan(
             self.hmsParamDict['SlitLengthmm']*0.5 / self.f)*360/np.pi  # deg
-        print(slitlengthdeg)
         self.gamma = self.mgammadeg + \
             ((slitlengthdeg / 2) * np.linspace(-1, 1, 2 * 50 + 1))  # deg
         # all int orders
@@ -724,7 +723,8 @@ class HMS_ImagePredictor:
                 slitnum = wdict['SlitNum']
                 if self.slitwidth is not None:
                     res = self.resolving_power(wl, m)*1e-3
-                    ax.annotate(f'[{wl},{slitnum},{m},{res:.0f}k]',
+                    beta = self.get_beta(wl, m) - self.alpha
+                    ax.annotate(f'[{wl},{slitnum},{m},{res:.0f}k,{round(beta, 0):.0f}°]',
                                 xy, xytext, rotation=270)
                 else:
                     ax.annotate(f'[{wl},{slitnum},{m}]',
