@@ -1,12 +1,11 @@
 system = "A - ECLIPSE"
 
 [SysParam]
-hmsVersion = "A - ECLIPSE"
 FlCollimator = 400
 FlPrimeCamera = 429.42
 SlitLengthmm = 55.29
 SlitLengthdeg = 7.8698411725696245
-sigma = 10125.5569
+sigma = 98.76
 relSlitPositionmm = 21.43
 SlitA2FarEdgemm = 63.35
 SlitA2CloseEdgemm = 13.83

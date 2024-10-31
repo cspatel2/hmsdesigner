@@ -1,19 +1,17 @@
 # %%
 from __future__ import annotations
-from typing import Optional, SupportsFloat as Numeric
+from typing import Dict, Optional, SupportsFloat as Numeric
 import os
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 from collections.abc import Iterable
 import tosholi
-from tqdm import tqdm
 import astropy.io.fits as pf
 from scipy.optimize import curve_fit
-from skimage import exposure
-import json
+from skimage.exposure import equalize_hist
 
-from .param_json import HmsParams, HmsSysParam, HmsWlParam, HmsInstr
+from .instrument_params import HmsParams, HmsSysParam, HmsWlParam, HmsInstr
 # %%
 # %%
 
@@ -38,36 +36,22 @@ class HMS_ImagePredictor:
         ### Raises:
             - `FileNotFoundError`: Configuration file not found.
             - `TypeError`: Invalid file extension.
+            - `ValueError`: Alpha, num_orders, mgammadeg, and pix must be set.
         """
         self.hmsVersion = ''
         self.slitwidth: Optional[Numeric] = None
         if not os.path.exists(configfile):
             raise FileNotFoundError(f"File {configfile} not found.")
+        
+        self.hmsParamDict: HmsSysParam = None
+        self.wlParamDict: Dict[str, HmsWlParam] = None
 
         ext = os.path.splitext(configfile)[-1].lower()
-        if ext == '.json':
-            from warnings import warn
-            warn(
-                "Using json files is deprecated and not recommended. Use toml files instead.")
-            with open(configfile, 'r') as ifile:
-                data = ifile.read()
-                params = HmsParams.schema().loads(data)
-                self.hmsParamDict = params.to_dict()['SysParam']
-                self.wlParamDict = params.to_dict()['WlParam']
-                self.hmsVersion = self.hmsParamDict['hmsVersion']
-                if params.InstParam is not None:
-                    instparam: HmsInstr = params.InstParam
-                    self.alpha = instparam.alpha
-                    self.num_orders = instparam.max_ord
-                    self.mgammadeg = instparam.mgamma_deg
-                    self.pix = instparam.imgsz
-                    self.img_rot = instparam.imgrot
-                    self.slitwidth = instparam.slitwidth
-        elif ext == '.toml':
+        if ext == '.toml':
             with open(configfile, 'rb') as ifile:
                 params = tosholi.load(HmsParams, ifile)
-                self.hmsParamDict = params.to_dict()['SysParam']
-                self.wlParamDict = params.to_dict()['WlParam']
+                self.hmsParamDict = params.SysParam
+                self.wlParamDict = params.WlParam
                 self.hmsVersion = params.system
                 if params.InstParam is not None:
                     instparam: HmsInstr = params.InstParam
@@ -94,26 +78,30 @@ class HMS_ImagePredictor:
             self.img_rot = img_rot
         if slitwidth is not None:
             self.slitwidth = slitwidth
+
+        if self.alpha is None or self.num_orders is None or self.mgammadeg is None or self.pix is None:
+            raise ValueError(
+                "Alpha, num_orders, mgammadeg, and pix must be set.")
         # Initialize other parameters
         # focal length of collimator slit -> grating
-        self.f = self.hmsParamDict['FlCollimator']
+        self.f = self.hmsParamDict.FlCollimator
         # focal length of collimator grating -> mosaic
-        self.fprime = self.hmsParamDict['FlPrimeCamera']
-        self.sigma = self.hmsParamDict['sigma']  # mm
+        self.fprime = self.hmsParamDict.FlPrimeCamera
+        self.sigma = 1e6 / self.hmsParamDict.sigma # mm
         self.alphas = self.relative_alphas(self.alpha)  # deg
         self.alpha_slitA = self.alphas[0]  # deg
         self.alpha_slitB = self.alphas[1]  # deg
         slitlengthdeg = np.arctan(
-            self.hmsParamDict['SlitLengthmm']*0.5 / self.f)*360/np.pi  # deg
+            self.hmsParamDict.SlitLengthmm*0.5 / self.f)*360/np.pi  # deg
         self.gamma = self.mgammadeg + \
             ((slitlengthdeg / 2) * np.linspace(-1, 1, 2 * 50 + 1))  # deg
         # all int orders
         self.orders = np.arange(-self.num_orders,
                                 self.num_orders + 1, 1, dtype=int)
-        self.MosaicWindowHeightmm = self.hmsParamDict['MosaicWindowHeightmm']
-        self.MosaicWindowWidthmm = self.hmsParamDict['MosaicWindowWidthmm']
-        self.MosaicHeightmm = self.hmsParamDict['MosaicHeightmm']
-        self.MosaicWidthmm = self.hmsParamDict['MosaicWidthmm']
+        self.MosaicWindowHeightmm = self.hmsParamDict.MosaicWindowHeightmm
+        self.MosaicWindowWidthmm = self.hmsParamDict.MosaicWindowWidthmm
+        self.MosaicHeightmm = self.hmsParamDict.MosaicHeightmm
+        self.MosaicWidthmm = self.hmsParamDict.MosaicWidthmm
 
         self.lw = 0.4  # line width
         self.ms = 0.2  # maker size
@@ -161,7 +149,7 @@ class HMS_ImagePredictor:
         if self.slitwidth is None:
             raise ValueError(
                 "Slit width is not set. Please set the slit width.")
-        blur = self.slitwidth/self.hmsParamDict['FlCollimator']
+        blur = self.slitwidth/self.f  # rad
         const = m*wl/(self.sigma*np.sin(np.deg2rad(gamma)))  # unitless
         sinb = const - np.sin(np.deg2rad(self.alpha))  # unitless
         cosb = np.sqrt(1 - sinb**2)  # unitless
@@ -237,7 +225,7 @@ class HMS_ImagePredictor:
     def relative_alphas(self, alpha):
         alpha_slitA = alpha  # deg
         alpha_slitB = alpha_slitA + \
-            self.mm2deg(self.hmsParamDict['relSlitPositionmm'], self.f)  # deg
+            self.mm2deg(self.hmsParamDict.relSlitPositionmm, self.f)  # deg
         return [alpha_slitA, alpha_slitB]  # deg
 
     def annotate_width(self, ax, lenmm, x_start, y0, wl, linewidth, linestyle, color, measurement: bool, toppanel: bool = True):
@@ -353,7 +341,7 @@ class HMS_ImagePredictor:
         # shape(result) = (len(wl), len(alpha), 2*m_order + 1, len(gamma))
         return np.asanyarray(results)
 
-    def plot_spectral_lines(self, ImageAt: str, Tape2Grating: bool, mosaic: bool = True, wls: Iterable = [486.1, 427.8, 557.7, 630.0, 656.3, 777.4], measurement: bool = True, fprime: float = None) -> plt.Figure:
+    def plot_spectral_lines(self, ImageAt: str, Tape2Grating: bool, mosaic: bool = True, wls: Iterable = [486.1, 427.8, 557.7, 630.0, 656.3, 777.4], measurement: bool = True, fprime: float = None, *, fig_args = (), fig_kwargs = dict(figsize=(7, 6), dpi=300, tight_layout=True)) -> plt.Figure:
 
         self.wls = wls
         ImageAt = ImageAt.lower()
@@ -367,7 +355,7 @@ class HMS_ImagePredictor:
         betas = self.deg2mm(betas, fl=self.fprime)  # mm
         gamma = self.deg2mm(self.gamma, fl=self.fprime)  # mm
 
-        fig, ax = plt.subplots(figsize=(7, 6), dpi=300, tight_layout=True)
+        fig, ax = plt.subplots(*fig_args, **fig_kwargs)
         plt.rcParams['font.family'] = 'monospace'
         plt.rcParams['font.monospace'] = 'Andale Mono'
         matplotlib.rc('text', usetex=False)
@@ -424,17 +412,17 @@ class HMS_ImagePredictor:
                         ax.annotate(f'[{aidx},{m}]', xy, xytext, rotation=270)
             else:
                 wdict = self.wlParamDict.get(w)
-                color = wdict['color']
-                if wdict['SlitNum'] in [1, 3]:
+                color = wdict.color
+                if wdict.SlitNum in [1, 3]:
                     aidx = 1
-                elif wdict['SlitNum'] in [2, 4]:
+                elif wdict.SlitNum in [2, 4]:
                     aidx = 0
                 else:
                     raise ValueError("Slit Number must be 1, 2, 3, or 4.")
 
                 # set gamma filter accoding to SlitNum
                 self.g0 = self.deg2mm(self.mgammadeg, fl=self.fprime)
-                if wdict['SlitNum'] in [1, 2]:
+                if wdict.SlitNum in [1, 2]:
                     gmask = (gamma >= self.g0)
                 else:
                     gmask = (gamma <= self.g0)
@@ -448,7 +436,7 @@ class HMS_ImagePredictor:
         self.g0 = self.deg2mm(self.mgammadeg, fl=self.fprime)
         # To plot just the Mosaic
         X1 = self.deg2mm(self.alpha, fl=self.fprime) - \
-            self.hmsParamDict['SlitA2FarEdgemm']  # mm
+            self.hmsParamDict.SlitA2FarEdgemm  # mm
         X2 = X1 + self.MosaicWindowWidthmm  # mm
 
         Y1 = self.g0 + self.MosaicWindowHeightmm/2  # mm
@@ -477,19 +465,19 @@ class HMS_ImagePredictor:
                 color = 'Black'
             else:
                 wdict = self.wlParamDict.get(w)
-                color = wdict['color']
+                color = wdict.color
 
             # set alpha idex
-            if wdict['SlitNum'] in [1, 3]:
+            if wdict.SlitNum in [1, 3]:
                 aidx = 1
-            elif wdict['SlitNum'] in [2, 4]:
+            elif wdict.SlitNum in [2, 4]:
                 aidx = 0
             else:
                 raise ValueError("Slit Number must be 1, 2, 3, or 4.")
 
             # set gamma filter accoding to SlitNum
             self.g0 = self.deg2mm(self.mgammadeg, fl=self.fprime)
-            if wdict['SlitNum'] in [1, 2]:
+            if wdict.SlitNum in [1, 2]:
                 gmask = (gamma >= self.g0)
             else:
                 gmask = (gamma <= self.g0)
@@ -503,13 +491,13 @@ class HMS_ImagePredictor:
                 idx = int(0.8*len(beta_plot))
                 xy = (beta_plot[idx], gamma_plot[-30])
                 xytext = (beta_plot[idx]-.75, gamma_plot[idx]+4)
-                slitnum = int(wdict['SlitNum'])
+                slitnum = int(wdict.SlitNum)
                 ax.annotate(f'[{slitnum}, {int(wl*10)} A]', xy, xytext,
                             rotation=270, va='top', ha='center', fontsize=8)
 
          # To plot just the Mosaic
         X1 = self.deg2mm(self.alpha, fl=self.fprime) - \
-            self.hmsParamDict['SlitA2FarEdgemm']  # mm
+            self.hmsParamDict.SlitA2FarEdgemm  # mm
         X2 = X1 + self.MosaicWindowWidthmm  # mm
 
         Y1 = self.g0 + self.MosaicWindowHeightmm/2  # mm
@@ -531,32 +519,32 @@ class HMS_ImagePredictor:
                 color = 'Black'
             else:
                 wdict = self.wlParamDict.get(w)
-                color = wdict['color']
+                color = wdict.color
 
             # set alpha idex
-            if wdict['SlitNum'] in [1, 3]:
+            if wdict.SlitNum in [1, 3]:
                 aidx = 1
-            elif wdict['SlitNum'] in [2, 4]:
+            elif wdict.SlitNum in [2, 4]:
                 aidx = 0
             else:
                 raise ValueError("Slit Number must be 1, 2, 3, or 4.")
 
             # set gamma filter accoding to SlitNum
             self.g0 = self.deg2mm(self.mgammadeg, fl=self.fprime)
-            if wdict['SlitNum'] in [1, 2]:
+            if wdict.SlitNum in [1, 2]:
                 gmask = (gamma >= self.g0)
             else:
                 gmask = (gamma <= self.g0)
             gamma_plot = gamma[gmask]
 
-            midx = list(self.orders).index(wdict['DiffractionOrder'])
+            midx = list(self.orders).index(wdict.DiffractionOrder)
             beta_plot = betas[widx][aidx][midx][gmask]
             ax.plot(beta_plot, gamma_plot, self.ls,
                     markersize=self.ms, color=color, linewidth=self.lw)
             idx = int(0.8*len(beta_plot))
             xy = (beta_plot[idx], gamma_plot[-30])
             xytext = (beta_plot[idx]-.75, gamma_plot[idx]+4)
-            slitnum = int(wdict['SlitNum'])
+            slitnum = int(wdict.SlitNum)
             ax.annotate(f'[{slitnum}, {int(wl*10)} A]', xy, xytext,
                         rotation=270, va='top', ha='center', fontsize=8)
 
@@ -564,7 +552,7 @@ class HMS_ImagePredictor:
 
         # To plot just the Mosaic
         X1 = self.deg2mm(self.alpha, fl=self.fprime) - \
-            self.hmsParamDict['SlitA2FarEdgemm']  # mm
+            self.hmsParamDict.SlitA2FarEdgemm  # mm
         X2 = X1 + self.MosaicWindowWidthmm  # mm
 
         Y1 = self.g0 + self.MosaicWindowHeightmm/2  # mm
@@ -576,14 +564,14 @@ class HMS_ImagePredictor:
         # Y1_w = Y1 + 3.2
         # Y2_w = Y2 -1.94
         # y postion adjusted by ledge height
-        toppanel_wls = list(self.hmsParamDict['MosaicFilters'][0])
+        toppanel_wls = list(self.hmsParamDict.MosaicFilters[0])
         wdict = self.wlParamDict[toppanel_wls[0]]
-        Y1_w = Y1 + (wdict['PanelHeightmm'] - wdict['PanelWindowHeightmm'])
+        Y1_w = Y1 + (wdict.PanelHeightmm - wdict.PanelWindowHeightmm)
 
         # y postion adjusted by ledge height
-        bottompanel_wls = list(self.hmsParamDict['MosaicFilters'][1])
+        bottompanel_wls = list(self.hmsParamDict.MosaicFilters[1])
         wdict = self.wlParamDict[bottompanel_wls[0]]
-        Y2_w = Y2 - (wdict['PanelHeightmm'] - wdict['PanelWindowHeightmm'])
+        Y2_w = Y2 - (wdict.PanelHeightmm - wdict.PanelWindowHeightmm)
 
         # limit from L-> R if looking from grating to mosaic.
         ax.set_xlim(X2_w, X1_w)
@@ -600,10 +588,10 @@ class HMS_ImagePredictor:
         ls = '-'
         lw = 1.5
         ax.axhline(
-            Y2_w + self.wlParamDict['6563']['PanelHeightmm'], linewidth=lw, linestyle=ls, color=c)
+            Y2_w + self.wlParamDict['6563'].PanelHeightmm, linewidth=lw, linestyle=ls, color=c)
         # test for the difference between horizontal line at gamma = 90 and the middle seam of mosiac. they should be right on top of eachother.
         # ax.axhline(self.g0,linewidth = lw, linestyle = ls,color ='orange')
-        # print(Y2_w + self.wlParamDict['6563']['PanelHeightmm'] - self.g0)
+        # print(Y2_w + self.wlParamDict['6563'].PanelHeightmm - self.g0)
         if Mosaic:
             # Bottom Panel of Mosaic------------------------------------
             idx = 1
@@ -611,17 +599,17 @@ class HMS_ImagePredictor:
             widthlabel = self.g0 - self.MosaicWindowHeightmm/4
             # mm, width at which the panel height label should be at.
             heightlabel = self.deg2mm(
-                self.alpha, fl=self.fprime) - self.hmsParamDict['SlitA2FarEdgemm']*0.95
+                self.alpha, fl=self.fprime) - self.hmsParamDict.SlitA2FarEdgemm*0.95
             x_bottom = X2_w  # left edge
             y_bottom = Y2_w  # bottom edge
-            wls = list(self.hmsParamDict['MosaicFilters'][idx])
+            wls = list(self.hmsParamDict.MosaicFilters[idx])
             wls.reverse()
-            height = self.wlParamDict[wls[idx]]['PanelHeightmm']
+            height = self.wlParamDict[wls[idx]].PanelHeightmm
             self.annotate_height(ax, height, y_bottom,
                                  heightlabel, lw, ls, c, Measurements)
             for wl in wls:
                 wdict = self.wlParamDict[wl]
-                lenmm = float(wdict['PanelWidthmm'])
+                lenmm = float(wdict.PanelWidthmm)
                 x_bottom -= lenmm
                 self.annotate_width(
                     ax, lenmm, x_bottom, widthlabel, wl, lw, ls, c, Measurements, False)
@@ -632,20 +620,20 @@ class HMS_ImagePredictor:
             widthlabel = self.g0 + self.MosaicWindowHeightmm/4
             # mm, width at which the panel height label should be at.
             heightlabel = self.deg2mm(
-                self.alpha, fl=self.fprime) - self.hmsParamDict['SlitA2FarEdgemm']*0.95
+                self.alpha, fl=self.fprime) - self.hmsParamDict.SlitA2FarEdgemm*0.95
             X2 = X1 + self.MosaicWindowWidthmm  # mm
             Y1 = self.g0 + self.MosaicWindowHeightmm/2  # mm
             x_top = X2_w  # left edge
             y_bottom = Y2_w + \
-                self.wlParamDict[wls[idx]]['PanelHeightmm']  # top edge
-            wls = list(self.hmsParamDict['MosaicFilters'][idx])
+                self.wlParamDict[wls[idx]].PanelHeightmm  # top edge
+            wls = list(self.hmsParamDict.MosaicFilters[idx])
             wls.reverse()
-            height = self.wlParamDict[wls[idx]]['PanelHeightmm']
+            height = self.wlParamDict[wls[idx]].PanelHeightmm
             self.annotate_height(ax, height, y_bottom,
                                  heightlabel, lw, ls, c, Measurements)
             for wl in wls:
                 wdict = self.wlParamDict[wl]
-                lenmm = float(wdict['PanelWidthmm'])
+                lenmm = float(wdict.PanelWidthmm)
                 x_top -= lenmm
                 self.annotate_width(
                     ax, lenmm, x_top, widthlabel, wl, lw, ls, c, Measurements)
@@ -660,7 +648,7 @@ class HMS_ImagePredictor:
         # Transform to pixel coordinates
         self.wls = wls
         X1 = self.deg2mm(self.alpha, fl=self.fprime) - \
-            self.hmsParamDict['SlitA2FarEdgemm']  # mm
+            self.hmsParamDict.SlitA2FarEdgemm  # mm
         X2 = X1 + self.MosaicWindowWidthmm  # mm
         X1, X2 = self.mm2pix(X1, 0, self.pix), self.mm2pix(
             X2, 0, self.pix)  # pix
@@ -692,12 +680,12 @@ class HMS_ImagePredictor:
                 color = 'Black'
             else:
                 wdict = self.wlParamDict.get(w)
-                color = wdict['color']
+                color = wdict.color
 
             # set alpha idex
-            if wdict['SlitNum'] in [1, 3]:
+            if wdict.SlitNum in [1, 3]:
                 aidx = 1
-            elif wdict['SlitNum'] in [2, 4]:
+            elif wdict.SlitNum in [2, 4]:
                 aidx = 0
             else:
                 raise ValueError("Slit Number must be 1, 2, 3, or 4.")
@@ -707,7 +695,7 @@ class HMS_ImagePredictor:
             g0 = self.deg2mm(self.mgammadeg, self.fprime)  # deg -> mm
             g0 = self.mm2pix(g0, 1)  # mm -> pix
             self.g0 = self.Linear(g0, self.my, self.by)  # pix -> dpix
-            if wdict['SlitNum'] in [1, 2]:
+            if wdict.SlitNum in [1, 2]:
                 gmask = (gamma >= self.g0)
             else:
                 gmask = (gamma <= self.g0)
@@ -720,7 +708,7 @@ class HMS_ImagePredictor:
                 idx = int(len(beta_plot)/4)
                 xy = (beta_plot[idx], gamma_plot[idx+10])
                 xytext = (beta_plot[idx]+1, gamma_plot[idx+5])
-                slitnum = wdict['SlitNum']
+                slitnum = wdict.SlitNum
                 if self.slitwidth is not None:
                     res = self.resolving_power(wl, m)*1e-3
                     beta = self.get_beta(wl, m) - self.alpha
@@ -751,7 +739,7 @@ class HMS_ImagePredictor:
         self.pix = data.shape[1]
         fig = self.plot_spectral_lines(
             ImageAt='detector', Tape2Grating=True, wls=wls)
-        data = exposure.equalize_hist(data)
+        data = equalize_hist(data)
         cmap = 'gray'
         if np.isnan(vmax):
             plt.imshow(data, cmap=cmap)
@@ -783,7 +771,7 @@ class HMS_ImagePredictor:
                 color = 'Black'
             else:
                 wdict = self.wlParamDict.get(w)
-                color = wdict['color']
+                color = wdict.color
 
             # Determine alpha based on the observed parameter
             if observed:
@@ -794,12 +782,12 @@ class HMS_ImagePredictor:
             else:
                 rel_alphas = self.alphas
 
-            if wdict['SlitNum'] in [1, 3]:
+            if wdict.SlitNum in [1, 3]:
                 alpha = rel_alphas[1]
             else:
                 alpha = rel_alphas[1]
 
-            morder = int(wdict['DiffractionOrder'])
+            morder = int(wdict.DiffractionOrder)
             beta_wl = []
             for i in cidx:
                 print(alpha, self.gamma[i], morder, self.sigma, wl)

@@ -1,12 +1,11 @@
 system = "A-ORIGIN"
 
 [SysParam]
-hmsVersion = "A-ORIGIN"
 FlCollimator = 400
 FlPrimeCamera = 443.401
 SlitLengthmm = 55.29
 SlitLengthdeg = 7.8698411725696245
-sigma = 10125.5569
+sigma = 98.76
 relSlitPositionmm = 25
 SlitA2FarEdgemm = 58.35
 SlitA2CloseEdgemm = 5.850000000000001

@@ -1,12 +1,11 @@
-system = "B"
+system = "HiT&MIS B"
 
 [SysParam]
-hmsVersion = "B"
 FlCollimator = 400
 FlPrimeCamera = 365.891
 SlitLengthmm = 55.3
 SlitLengthdeg = 7.871246707831734
-sigma = 12726.966940372671
+sigma = 78.57
 relSlitPositionmm = 20.04
 SlitA2FarEdgemm = 71.35
 SlitA2CloseEdgemm = 15.83

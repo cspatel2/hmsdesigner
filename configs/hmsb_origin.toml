@@ -1,12 +1,11 @@
-system = "B-ORIGIN"
+system = "HiT&MIS B-ORIGIN"
 
 [SysParam]
-hmsVersion = "B-ORIGIN"
 FlCollimator = 400
 FlPrimeCamera = 365.891
 SlitLengthmm = 55.3
 SlitLengthdeg = 7.871246707831734
-sigma = 10245.208387
+sigma = 97.6
 relSlitPositionmm = 20.04
 SlitA2FarEdgemm = 71.35
 SlitA2CloseEdgemm = 15.83

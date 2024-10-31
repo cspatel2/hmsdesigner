@@ -3,11 +3,10 @@ system = "HiT&MIS A"
 # | B | <--- relSlitPositionmm ---> | A | ---> SlitA2CloseEdgemm | Mosaic | SlitA2FarEdgemm
 #
 [SysParam]
-hmsVersion = "HiT&MIS A"
 FlCollimator = 400 # focal length of collimator in mm
 FlPrimeCamera = 443.401 # focal length of the mosaic arm in mm
 SlitLengthmm = 55.29 # vertical slit length in mm
-sigma = 10125.5569 # groove spacing in nm (1e6 / groove density in mm)
+sigma = 98.76 # groove density in grooves/mm
 relSlitPositionmm = 21.43 # slit spacing
 SlitA2FarEdgemm = 63.35 # distance from slit A to far edge of the mosaic in mm
 SlitA2CloseEdgemm = 13.83 # distance from slit A to close edge of the mosaic in mm

@@ -1,35 +1,14 @@
 # %%
 from __future__ import annotations
 from typing import Optional, SupportsFloat as Numeric
-import astropy.io.fits as pf
 import os
 from skimage import transform
 from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-
-import skimage
-
-def in_notebook():
-    """
-    Returns ``True`` if the module is running in IPython kernel,
-    ``False`` if in IPython shell or other Python shell.
-    """
-    return 'ipykernel' in sys.modules
-# %%
-
-
-if not in_notebook():
-    from ._utils import find_nearest, open_fits
-    from ._ImgPredictor import HMS_ImagePredictor
-    # from ..Utils._files import *
-    # from ..Utils._Utility import *
-else:
-    from hmsdesigner._ImgPredictor import HMS_ImagePredictor
-    from hmsdesigner._utils import find_nearest, open_fits
-    # from hmsdesigner.Utils._files import *
-    # from hmsdesigner.Utils._Utility import *
+from .utils import find_nearest, open_fits
+from .line_predictor import HMS_ImagePredictor
 # %%
 
 
@@ -41,7 +20,7 @@ class MapPixel2Wl:
         self.ip = predictor  # HMs image predictor
         self.hmsParamDict = self.ip.hmsParamDict
         self.wlParamDict = self.ip.wlParamDict
-        self.sigma = self.hmsParamDict['sigma']
+        self.sigma = predictor.sigma
 
         print('Calculating Gamma...')
         self.gammagrid = self.get_gamma_grid()
@@ -148,7 +127,7 @@ class MapPixel2Wl:
         """
         betafaredge = self.ip.alpha - \
             self.ip.mm2deg(
-                self.hmsParamDict['SlitA2FarEdgemm'], self.ip.fprime)
+                self.hmsParamDict.SlitA2FarEdgemm, self.ip.fprime)
         betanearedge = betafaredge + \
             self.ip.mm2deg(self.ip.MosaicWindowWidthmm, self.ip.fprime)
         # linspace of betas that are allowed through the mosaic, one row of betas
@@ -179,7 +158,7 @@ class MapPixel2Wl:
         value_grid = np.zeros((self.ip.pix, self.ip.pix))
 
         # get the list of filter wls
-        for fidx, wllist in enumerate(self.hmsParamDict['MosaicFilters']):
+        for fidx, wllist in enumerate(self.hmsParamDict.MosaicFilters):
             if fidx == 0:
                 rowidx = np.where(gammagrid[:, 0] >= 90)[
                     0]  # bottom panel on image
@@ -188,11 +167,11 @@ class MapPixel2Wl:
                     0]  # top panel on image
             for wlidx, wl in enumerate(wllist):
                 wdict = self.wlParamDict[wl]  # get wavelength dict
-                morder = int(wdict['DiffractionOrder'])
+                morder = int(wdict.DiffractionOrder)
 
-                if wdict['SlitNum'] in [2, 4]:
+                if wdict.SlitNum in [2, 4]:
                     alpha = self.ip.alpha_slitA
-                elif wdict['SlitNum'] in [1, 3]:
+                elif wdict.SlitNum in [1, 3]:
                     alpha = self.ip.alpha_slitB
 
                 if wlidx == 0:
@@ -202,7 +181,7 @@ class MapPixel2Wl:
                     x = x1  # set start x value as the right edge of previous wl
                 # set the right edge of the current wl
                 x1 = x + \
-                    self.ip.mm2deg(wdict['PanelWindowWidthmm'], self.ip.fprime)
+                    self.ip.mm2deg(wdict.PanelWindowWidthmm, self.ip.fprime)
                 panelmask = (betagrid[0] >= x) & (
                     betagrid[0] <= x1)  # find idx within panel
                 colidx = np.where(panelmask)[0]

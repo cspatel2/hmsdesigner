@@ -3,89 +3,73 @@ from __future__ import annotations
 import os
 from typing import Dict, List, Optional, SupportsFloat as Numeric
 from dataclasses import dataclass
-from dataclasses_json import dataclass_json
 import tosholi
 
-import numpy as np
 
-
-@dataclass_json
 @dataclass
 class HmsSysParam:
-    hmsVersion: str
-    FlCollimator: float
-    FlPrimeCamera: float
-    SlitLengthmm: float
-    sigma: float
-    relSlitPositionmm: float
+    """## Instrument Optics Parameters
+    """
+    FlCollimator: float  # collimator focal length (mm)
+    FlPrimeCamera: float  # grating camera focal length (mm)
+    SlitLengthmm: float  # slit length (mm)
+    sigma: float  # groove density (grooves/mm)
+    relSlitPositionmm: float  # distance between the two slits (mm)
+    # distance between slit closest to mosaic and the farest edge of the mosaic (mm)
     SlitA2FarEdgemm: float
+    # distance between slit closest to mosaic and the closest edge of the mosaic (mm)
     SlitA2CloseEdgemm: float
-    MosaicWidthmm: float
-    MosaicHeightmm: float
-    MosaicWindowWidthmm: float
-    MosaicWindowHeightmm: float
-    MosaicFilters: List[List[str]]
+    MosaicWidthmm: float  # mosaic width (mm)
+    MosaicHeightmm: float  # mosaic height (mm)
+    MosaicWindowWidthmm: float  # mosaic window width (mm)
+    MosaicWindowHeightmm: float  # mosaic window height (mm)
+    MosaicFilters: List[List[str]]  # mosaic filters
 
 
-@dataclass_json
 @dataclass
 class HmsWlParam:
-    wl: float
-    color: str
-    SlitNum: int
-    DiffractionOrder: int
-    PanelLetter: str
-    PanelWindowWidthmm: float
-    PanelWidthmm: float
-    PanelWindowHeightmm: float
-    PanelHeightmm: float
+    """## Instrument interest wavelength parameters
+    """
+    wl: float  # wavelength (nm)
+    color: str  # color
+    SlitNum: int  # number of slits
+    DiffractionOrder: int  # diffraction order
+    PanelLetter: str  # panel letter
+    PanelWindowWidthmm: float  # panel window width (mm)
+    PanelWidthmm: float  # panel width (mm) < PanelWindowWidthmm
+    PanelWindowHeightmm: float  # panel window height (mm)
+    PanelHeightmm: float  # panel height (mm) < PanelWindowHeightmm
 
-@dataclass_json
+
 @dataclass
 class HmsInstr:
-    alpha: float
-    max_ord: int
-    mgamma_deg: float
-    imgsz: int
-    imgrot: float
-    slitwidth: Optional[float] = None
+    """## Instrument Adjustment Parameters
+    """
+    alpha: float  # angle of incidence (deg)
+    max_ord: int  # maximum diffraction order
+    mgamma_deg: float  # grating incidence angle
+    imgsz: int  # detector size
+    imgrot: float  # detector rotation
+    slitwidth: Optional[float] = None  # slit width (mm)
 
-@dataclass_json
+
 @dataclass
 class HmsParams:
-    system: str
-    SysParam: HmsSysParam
-    WlParam: Dict[str, HmsWlParam]
-    InstParam: Optional[HmsInstr] = None
-
-
-def json_to_toml(file: str):
-    """## Convert a JJSON instrument config to a TOML file
-
-    ### Args:
-        - `file (str)`: Input JSON file
-
-    ### Raises:
-        - `ValueError`: Invalid JSON file
+    """## Instrument Parameters
     """
-    (base, ext) = os.path.splitext(file)
-    if 'json' not in ext.lower():
-        raise ValueError('Only json files are supported')
-    with open(file, 'r') as ifile:
-        data = ifile.read()
-    hmsparam = HmsParams.schema().loads(data)
-    with open(base + '.toml', 'wb') as ofile:
-        tosholi.dump(hmsparam, ofile)
+    system: str  # Instrument name
+    SysParam: HmsSysParam  # Instrument Optics Parameters
+    WlParam: Dict[str, HmsWlParam]  # Instrument interest wavelength parameters
+    InstParam: Optional[HmsInstr] = None  # Instrument Adjustment Parameters
 
 
 # %%
 if __name__ == '__main__':
     hmsAOrigin_ParamDict = {
-        'hmsVersion': 'A-ORIGIN',
         'FlCollimator': 400,
         'FlPrimeCamera': 443.401,
         'SlitLengthmm': 55.29,
-        'sigma': 10125.5569,
+        'sigma': 98.76,
         'relSlitPositionmm': 25,
         'SlitA2FarEdgemm': 58.35,
         'SlitA2CloseEdgemm': 58.35 - 52.50,
@@ -165,7 +149,7 @@ if __name__ == '__main__':
         'FlCollimator': 400,
         'FlPrimeCamera': 443.401,
         'SlitLengthmm': 55.29,
-        'sigma': 10125.5569,
+        'sigma': 98.76,
         'relSlitPositionmm': 21.43,
         'SlitA2FarEdgemm': 63.35,
         'SlitA2CloseEdgemm': 13.83,
@@ -308,7 +292,7 @@ if __name__ == '__main__':
         'FlCollimator': 400,
         'FlPrimeCamera': 429.420,
         'SlitLengthmm': 55.29,
-        'sigma': 10125.5569,
+        'sigma': 98.76,
         'relSlitPositionmm': 21.43,
         'SlitA2FarEdgemm': 63.35,
         'SlitA2CloseEdgemm': 13.83,
@@ -327,7 +311,7 @@ if __name__ == '__main__':
         'FlPrimeCamera': 365.891,
         'SlitLengthmm': 55.30,  # slight length, mm.
         # slit length = slitlen/focallength,Deg.
-        'sigma': 10245.208387*100/80.5,  # measured grating density
+        'sigma': 1/(10245.208387*100/80.5),  # measured grating density
         'relSlitPositionmm': 20.04,  # Distance between the two slits, mm.
         # distance between slit closest to mosaic and the farest edge of the mosaic, mm.
         'SlitA2FarEdgemm': 71.35,
@@ -413,7 +397,7 @@ if __name__ == '__main__':
         'FlPrimeCamera': 365.891,
         'SlitLengthmm': 55.30,  # slight length, mm.
         # slit length = slitlen/focallength,Deg.
-        'sigma': 10245.208387,  # measured grating density
+        'sigma': 1 / 10245.208387,  # measured grating density
         #     'sigma': 10131.7122594, #new grating
         'relSlitPositionmm': 20.04,  # Distance between the two slits, mm.
         # distance between slit closest to mosaic and the farest edge of the mosaic, mm.
@@ -511,8 +495,6 @@ if __name__ == '__main__':
     hmsparam = HmsParams(sys.hmsVersion, sys, wls)
     # print(hash(sys))
     dir = os.path.dirname(__file__)
-    with open(os.path.join(dir, 'hmsa_origin.json'), 'w') as ofile:
-        ofile.write(hmsparam.to_json())
     with open(os.path.join(dir, 'hmsa_origin.toml'), 'wb') as ofile:
         tosholi.dump(hmsparam, ofile)
 
@@ -521,33 +503,24 @@ if __name__ == '__main__':
     hmsparam = HmsParams(sys.hmsVersion, sys, wls)
     # print(hash(sys))
     # print(hmsparam.to_dict())
-    with open(os.path.join(dir, 'hmsa_aurora.json'), 'w') as ofile:
-        ofile.write(hmsparam.to_json())
     with open(os.path.join(dir, 'hmsa_aurora.toml'), 'wb') as ofile:
         tosholi.dump(hmsparam, ofile)
 
     sys = HmsSysParam(**hmsAEclipse_ParamDict)
     wls = {k: HmsWlParam(**v) for (k, v) in hmsAEclipse_wlParamDict.items()}
     hmsparam = HmsParams(sys.hmsVersion, sys, wls)
-    with open(os.path.join(dir, 'hmsa_eclipse.json'), 'w') as ofile:
-        ofile.write(hmsparam.to_json())
     with open(os.path.join(dir, 'hmsa_eclipse.toml'), 'wb') as ofile:
         tosholi.dump(hmsparam, ofile)
-
 
     sys = HmsSysParam(**hmsB_ParamDict)
     wls = {k: HmsWlParam(**v) for (k, v) in hmsB_wlParamDict.items()}
     hmsparam = HmsParams(sys.hmsVersion, sys, wls)
-    with open(os.path.join(dir, 'hmsb_old.json'), 'w') as ofile:
-        ofile.write(hmsparam.to_json())
     with open(os.path.join(dir, 'hmsb_old.toml'), 'wb') as ofile:
         tosholi.dump(hmsparam, ofile)
 
     sys = HmsSysParam(**hmsBOrigin_ParamDict)
     wls = {k: HmsWlParam(**v) for (k, v) in hmsBOrigin_wlParamDict.items()}
     hmsparam = HmsParams(sys.hmsVersion, sys, wls)
-    with open(os.path.join(dir, 'hmsb_origin.json'), 'w') as ofile:
-        ofile.write(hmsparam.to_json())
     with open(os.path.join(dir, 'hmsb_origin.toml'), 'wb') as ofile:
         tosholi.dump(hmsparam, ofile)
 
